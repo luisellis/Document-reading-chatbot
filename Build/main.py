@@ -23,7 +23,6 @@ else:
     print("OPENAI_API_KEY is not set.")
 
 
-
 ###################
 #     Read PDF
 ###################
