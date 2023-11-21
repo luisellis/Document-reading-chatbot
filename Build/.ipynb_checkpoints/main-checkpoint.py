@@ -9,54 +9,54 @@ v1.1: Started developing in November 9 2023
 #pip install PyPDF2
 #pip install langchain
 
+# Base requeriments
 import os
 import requests
-from PyPDF2 import PdfReader
+
+#User defined functions
+from pdf_Cleanser import pdf_file_cleanser
+
+# for AI and PDF processing
+
+# libraries and dependencies:
+    # pip install tiktoken
+    # Visual Studio C++ Tools
+    # pip install hnswlib
+    # pip install openai
+    # pip install chromadb
 from langchain.document_loaders.pdf import PDFMinerLoader
 from langchain.indexes import VectorstoreIndexCreator
 
-my_variable = os.environ.get("OPENAI_API_KEY")
 
-if my_variable is not None:
-    print(f"OPENAI_API_KEY: {my_variable}")
-else:
-    print("OPENAI_API_KEY is not set.")
+# # To implement later
+# my_variable = os.environ.get("OPENAI_API_KEY")
 
-
-
+# if my_variable is not None:
+#    print(f"OPENAI_API_KEY: {my_variable}")
+# else:
+#    print("OPENAI_API_KEY is not set.")
+    
 ###################
 #     Read PDF
 ###################
 
-
-
 # Set the path to the directory containing the PDF files
-pdf_dir  = "D:/Freelancering/Andrew/ChatGPT consultation/academic read/academic read" # This has to be changed to the raw_url
+pdf_dir  = "D:/Freelancering/Andrew/Document-reading-chatbot/PDFs" # This has to be changed to the raw_url
 
-# Replace 'raw_url' with the actual raw URL of the file in your GitHub repository
-raw_url = 'https://raw.githubusercontent.com/username/repository/main/path/to/your/file.txt'
-
-
-# change to a modular method
-response = requests.get(raw_url)
-if response.status_code == 200:
-    data = response.text
-    print(data)
-else:
-    print(f"Failed to retrieve data. Status code: {response.status_code}")
-
-
-    
 # Get a list of all files in the directory
 pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
 
+# create empty string object
+all_text = ""
+#Iterate over files - find a way to change this
+for file in pdf_files:
+    dir = pdf_dir + '/' + file
+    #dir = os.path.join(pdf_dir, file)
+    # Apply cleansing function to read files
+    text = pdf_file_cleanser(dir)
+    # all_text += text
 
-# Create the index -- Has a lot of requirements:
-    # pip install tiktoken
-    # Visual Studio C++ Tools
-    # pip install hnswlib
-    #pip install openai
-    # pip install chromadb
+
 index = VectorstoreIndexCreator().from_loaders(loaders)
 
 # query

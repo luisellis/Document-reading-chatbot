@@ -7,3 +7,10 @@
 #Click "Add secret" to save it.
 
 os.environ['OPENAI_API_KEY'] = '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'
+# Replace these values with your own
+github_owner = 'luisellis'
+github_repo = 'Document-reading-chatbot'
+github_path = 'PDFs/'  # Change this to the path where your PDFs are located
+
+# Set your GitHub personal access token
+github_token = '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' # The token will expire on Wed, Dec 20 2023
