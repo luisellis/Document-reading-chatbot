@@ -1,128 +1,130 @@
 # -*- coding: utf-8 -*-
 """
-v1: Created on Tue May  2  2023
-v1.1: Started developing in November 9 2023
+v1: Completely build in 1/9/2024
+
 
 """
 
-# Remember to install these packages in pip - We have to figure out how to set up an environment to run this
-#pip install PyPDF2
-#pip install langchain
-import os
-import requests
-from PyPDF2 import PdfReader
-from langchain.document_loaders.pdf import PDFMinerLoader
-from langchain.indexes import VectorstoreIndexCreator
-
-
-
-
-###################
-#     Read PDF
-###################
-
-
-
-# Set the path to the directory containing the PDF files
-#pdf_dir  = "D:/Freelancering/Andrew/ChatGPT consultation/academic read/academic read" # This has to be changed to the raw_url
-
-# Replace 'raw_url' with the actual raw URL of the file in your GitHub repository
-raw_url = 'https://raw.githubusercontent.com/username/repository/main/path/to/your/file.txt'
-
-
-# change to a modular method
-response = requests.get(raw_url)
-if response.status_code == 200:
-    data = response.text
-    print(data)
-else:
-    print(f"Failed to retrieve data. Status code: {response.status_code}")
-
-#pdf_path = '../PDFs/file.pdf'
-#with open(pdf_path, 'rb') as pdf_file:
-    # Your code to work with the PDF file
-
-
-    
-# Get a list of all files in the directory
-pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
-
-
-# Use this code to delete the files with errors
-all_text = ""
-for pdf_file in pdf_files:
-    # Set the path to the current PDF file
-    pdf_path = os.path.join(pdf_dir, pdf_file)
-    
-    # Try to open the PDF file and read its contents
-    try:
-        with open(pdf_path, 'rb') as f:
-            pdf_reader = PdfReader(f)
-            for page_num in range(len(pdf_reader.pages)):
-                page = pdf_reader.pages[page_num]
-                text = page.extract_text()
-                
-                # Append the text to the all_text string
-                all_text += text
-    except Exception as e:
-        print(f"Error processing file {pdf_file}: {str(e)}")
-        continue
-
-# Update after deleting -- I run this code after removing certain files
-pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
-
-# Create a list to store the loaders for each file
-loaders = []
-# Loop through each PDF file and extract its text
-for pdf_file in pdf_files:
-    # Set the path to the current PDF file
-    pdf_path = os.path.join(pdf_dir, pdf_file)
-    
-    # Try to open the PDF file and create a PDFLoader instance for it
-    try:
-        loader = PDFMinerLoader(pdf_path)
-        loaders.append(loader)
-    except Exception as e:
-        print(f"Error processing file {pdf_file}: {str(e)}")
-        continue
-
-
-# Create the index -- Has a lot of requirements:
+#-----------------------------------
+#   Notes for overall run of code
+#-----------------------------------
+"""""
+Remember to install these packages in pip - We have to figure out how to set up an environment to run this
+    pip install PyPDF2
+    pip install langchain
+for AI and PDF processing
+ libraries and dependencies:
     # pip install tiktoken
     # Visual Studio C++ Tools
     # pip install hnswlib
-    #pip install openai
+    # pip install openai
     # pip install chromadb
+
+"""
+
+#-------------------------------------
+# libraries and dependencies invoker 
+#-------------------------------------
+
+# environment
+import Build.Environment # Temporal API Key
+# Base requeriments
+import os
+import sys 
+import requests
+#User defined functions
+from Build.pdf_selector import pdf_file_selector
+from Build.pdf_Processor import pdf_file_processor
+
+#LangChain
+from langchain.indexes import VectorstoreIndexCreator
+
+# Verify if key exists
+my_variable = os.environ.get("OPENAI_API_KEY")
+if my_variable is not None:
+   print("OPENAI_API_KEY exists - continue to run")
+else:
+   sys.exit("OPENAI_API_KEY is not set. Verify the key before running.")
+    
+#--------------------------------------------------------------------
+#     PDF Directory - to be changed later to cloud implementation
+#--------------------------------------------------------------------
+   
+# Set the path to the directory containing the PDF files 
+   # This is done locally at the moment - but should work in any local pc with Github conf
+current_dir = os.getcwd()
+pdf_dir  = os.path.join(os.getcwd(),"PDFs")
+if os.path.isdir(pdf_dir):
+    print('folder exists')
+else:
+    sys.exit("Make sure the \"PDFs\" folder is in a relative path.") # Exit if not github conf
+
+#--------------------
+#     Read Selector
+#--------------------
+
+# Get all PDFs
+pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
+
+# create empty list
+pdf_selected = []
+
+#Iterate over files 
+for file in pdf_files:
+    dir = pdf_dir + '/' + file
+    if os.path.isfile(dir): # only apply if the file exists (it should exist)
+        # Apply cleansing function to select files
+        selected_file = pdf_file_selector(dir)
+        if selected_file is not None:
+            pdf_selected.append(selected_file) 
+
+print(f"Out of {len(pdf_files)} only {len(pdf_selected)} will be considered for the analysis.")
+
+#----------------------
+#     Process PDFs
+#----------------------
+
+# create empty loader
+loaders = []
+
+#Iterate over files 
+for file in pdf_selected:
+    if os.path.isfile(file): # in case something breaks above
+        loader = pdf_file_processor(file)
+        if loader is not None: # it should ALWAYS return objects
+            loaders.append(loader) 
+
+
+#---------------------------
+#     Create Vector Store
+#---------------------------
+
 index = VectorstoreIndexCreator().from_loaders(loaders)
 
-# query
-query = "what is the objective for 2050 challenge?"
-index.query_with_sources(query)
-query = "what are foundational ideas of science of cities authors"
-index.query_with_sources(query)
-query = "do the authors mention any role cities?"
-index.query_with_sources(query)
-query = "What are some things that cities could apply in order to fulfill the 2050 challenge?"
-index.query_with_sources(query)
+queries = [
+    "Can you analyze and compare the core functionalities of each decision support tool, focusing on their primary purposes and capabilities in the context of climate action?",
+    "What are the underlying methodological approaches used in each tool? How do they integrate data science and climate modeling techniques?",
+    "What types of data do these tools require for operation? Please identify and compare the sources of data they use (e.g., climatic, socio-economic, infrastructural).",
+    "How do user interfaces and accessibility features differ among these tools? Assess their ease of use for different stakeholder groups.",
+    "Evaluate the scenario modeling capabilities of each tool. How detailed and diverse are the climate and policy scenarios they can simulate?",
+    "What features do these tools offer for stakeholder engagement and communication? How do they visualize data and model outcomes for different audiences?",
+    "Assess the level of customization and flexibility offered by each tool. How well can they be adapted to specific urban contexts or policy goals?",
+    "How do each of these tools support policy decision-making? Analyze their capacity to provide actionable recommendations or insights.",
+    "What are the strengths and limitations of each tool in supporting climate action decisions? Compare their effectiveness in various urban and policy contexts.",
+    "Investigate how each tool can be integrated with other urban planning or climate action systems. What are the possibilities and challenges of such integrations?"
+]
 
-# --- This one adds the page number and document name
-# all_text = ""
-# # Loop through each PDF file and extract its text
-# for pdf_file in pdf_files:
-#     # Set the path to the current PDF file
-#     pdf_path = os.path.join(pdf_dir, pdf_file)
-    
-#     # Try to open the PDF file and read its contents
-#     try:
-#         with open(pdf_path, 'rb') as f:
-#             pdf_reader = PdfReader(f)
-#             doc_name = pdf_file.split(".")[0] # extract document name without extension
-#             for page_num in range(len(pdf_reader.pages)):
-#                 page = pdf_reader.pages[page_num]
-#                 text = page.extract_text()
-#                 page_text = f"{doc_name} - Page {page_num + 1}: {text}" # add document name and page number before page text
-#                 all_text += page_text
-#     except Exception as e:
-#         print(f"Error processing file {pdf_file}: {str(e)}")
-#         continue
-    
+# query
+for query in queries[0]:
+    index.query_with_sources(query)
+
+#------------------------------------
+#  IF THE WHOLE CODE DOESN'T NEED TO RUN JUST RUN THESE LINES AND RUN THE QUERIES ABOVE/MOVE BELOW
+#------------------------------------
+import pickle
+
+# Save the file
+pickle.dump(index, file = open("index.pickle", "wb"))
+
+# Reload the file
+index_reloaded = pickle.load(open("index.pickle", "rb"))
