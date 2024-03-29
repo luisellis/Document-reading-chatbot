@@ -8,7 +8,8 @@
 
 import os
 
-os.environ['OPENAI_API_KEY'] = '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'
+#os.environ['OPENAI_API_KEY'] = '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'
+os.environ['OPENAI_API_KEY'] = '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'
 # Replace these values with your own
 github_owner = 'luisellis'
 github_repo = 'Document-reading-chatbot'
